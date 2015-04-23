@@ -37,8 +37,8 @@ type Message struct {
 type cmd struct {
 	op     operation
 	topics []string
-	ch     chan interface{}
-	msg    interface{}
+	ch     chan *Message
+	msg    *Message
 }
 
 // New creates a new PubSub and starts a goroutine for handling operations.
