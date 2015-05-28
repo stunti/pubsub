@@ -80,7 +80,7 @@ func (ps *PubSub) AddSub(ch chan *Mailbox, topics ...string) {
 // Pub publishes the given message to all subscribers of
 // the specified topics.
 func (ps *PubSub) Pub(msg *Message, topics ...string) {
-	ps.cmdChan <- cmd{op: pub, topics: topics, msg: &Mailbox{Topic: "", Content: msg}
+	ps.cmdChan <- cmd{op: pub, topics: topics, msg: &Mailbox{Topic: "", Content: msg}}
 }
 
 // Unsub unsubscribes the given channel from the specified
