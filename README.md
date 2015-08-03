@@ -1,5 +1,9 @@
 Install pubsub with,
 
+    go get github.com/stunti/pubsub
+    
+original version: 
+
     go get github.com/tuxychandru/pubsub
 
 View the [API Documentation](http://godoc.org/github.com/tuxychandru/pubsub).
