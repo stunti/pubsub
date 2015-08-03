@@ -5,7 +5,7 @@
 package pubsub
 
 import (
-	check "launchpad.net/gocheck"
+	check "gopkg.in/check.v1"
 	"runtime"
 	"testing"
 	"time"
@@ -25,12 +25,25 @@ func (s *Suite) TestSub(c *check.C) {
 	ch2 := ps.Sub("t1")
 	ch3 := ps.Sub("t2")
 
-	ps.Pub("hi", "t1")
-	c.Check(<-ch1, check.Equals, "hi")
-	c.Check(<-ch2, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
 
-	ps.Pub("hello", "t2")
-	c.Check(<-ch3, check.Equals, "hello")
+	ps.Pub(msg1, "t1")
+	res1 := <-ch1
+	res2 := <-ch2
+
+	c.Check(res1.Payload, check.Equals, "hi")
+	c.Check(res2.Payload, check.Equals, "hi")
+
+	msg3 := &Message{
+		Id:      3,
+		Payload: "hello",
+	}
+	ps.Pub(msg3, "t2")
+	res3 := <-ch3
+	c.Check(res3.Payload, check.Equals, "hello")
 
 	ps.Shutdown()
 	_, ok := <-ch1
@@ -45,8 +58,13 @@ func (s *Suite) TestSubOnce(c *check.C) {
 	ps := New(1)
 	ch := ps.SubOnce("t1")
 
-	ps.Pub("hi", "t1")
-	c.Check(<-ch, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
+	res := <-ch
+	c.Check(res.Payload, check.Equals, "hi")
 
 	_, ok := <-ch
 	c.Check(ok, check.Equals, false)
@@ -58,19 +76,40 @@ func (s *Suite) TestAddSub(c *check.C) {
 	ch1 := ps.Sub("t1")
 	ch2 := ps.Sub("t2")
 
-	ps.Pub("hi1", "t1")
-	c.Check(<-ch1, check.Equals, "hi1")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi1",
+	}
+	ps.Pub(msg1, "t1")
+	res1 := <-ch1
+	c.Check(res1.Payload, check.Equals, "hi1")
 
-	ps.Pub("hi2", "t2")
-	c.Check(<-ch2, check.Equals, "hi2")
+	msg2 := &Message{
+		Id:      2,
+		Payload: "hi2",
+	}
+	ps.Pub(msg2, "t2")
+	res2 := <-ch2
+	c.Check(res2.Payload, check.Equals, "hi2")
 
+	msg3 := &Message{
+		Id:      3,
+		Payload: "hi3",
+	}
 	ps.AddSub(ch1, "t2", "t3")
-	ps.Pub("hi3", "t2")
-	c.Check(<-ch1, check.Equals, "hi3")
-	c.Check(<-ch2, check.Equals, "hi3")
+	ps.Pub(msg3, "t2")
+	res1 = <-ch1
+	res2 = <-ch2
+	c.Check(res1.Payload, check.Equals, "hi3")
+	c.Check(res2.Payload, check.Equals, "hi3")
 
-	ps.Pub("hi4", "t3")
-	c.Check(<-ch1, check.Equals, "hi4")
+	msg4 := &Message{
+		Id:      4,
+		Payload: "hi4",
+	}
+	ps.Pub(msg4, "t3")
+	res1 = <-ch1
+	c.Check(res1.Payload, check.Equals, "hi4")
 
 	ps.Shutdown()
 }
@@ -79,8 +118,13 @@ func (s *Suite) TestUnsub(c *check.C) {
 	ps := New(1)
 	ch := ps.Sub("t1")
 
-	ps.Pub("hi", "t1")
-	c.Check(<-ch, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
+	res := <-ch
+	c.Check(res.Payload, check.Equals, "hi")
 
 	ps.Unsub(ch, "t1")
 	_, ok := <-ch
@@ -98,9 +142,13 @@ func (s *Suite) TestUnsubAll(c *check.C) {
 	m, ok := <-ch1
 	c.Check(ok, check.Equals, false)
 
-	ps.Pub("hi", "t1")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
 	m, ok = <-ch2
-	c.Check(m, check.Equals, "hi")
+	c.Check(m.Payload, check.Equals, "hi")
 
 	ps.Shutdown()
 }
@@ -112,11 +160,22 @@ func (s *Suite) TestClose(c *check.C) {
 	ch3 := ps.Sub("t2")
 	ch4 := ps.Sub("t3")
 
-	ps.Pub("hi", "t1")
-	ps.Pub("hello", "t2")
-	c.Check(<-ch1, check.Equals, "hi")
-	c.Check(<-ch2, check.Equals, "hi")
-	c.Check(<-ch3, check.Equals, "hello")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	msg2 := &Message{
+		Id:      2,
+		Payload: "hello",
+	}
+	ps.Pub(msg1, "t1")
+	ps.Pub(msg2, "t2")
+	res1 := <-ch1
+	res2 := <-ch2
+	res3 := <-ch3
+	c.Check(res1.Payload, check.Equals, "hi")
+	c.Check(res2.Payload, check.Equals, "hi")
+	c.Check(res3.Payload, check.Equals, "hello")
 
 	ps.Close("t1", "t2")
 	_, ok := <-ch1
@@ -126,8 +185,13 @@ func (s *Suite) TestClose(c *check.C) {
 	_, ok = <-ch3
 	c.Check(ok, check.Equals, false)
 
-	ps.Pub("welcome", "t3")
-	c.Check(<-ch4, check.Equals, "welcome")
+	msg3 := &Message{
+		Id:      3,
+		Payload: "welcome",
+	}
+	ps.Pub(msg3, "t3")
+	res4 := <-ch4
+	c.Check(res4.Payload, check.Equals, "welcome")
 
 	ps.Shutdown()
 }
@@ -156,11 +220,21 @@ func (s *Suite) TestMultiSub(c *check.C) {
 	ps := New(1)
 	ch := ps.Sub("t1", "t2")
 
-	ps.Pub("hi", "t1")
-	c.Check(<-ch, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
+	res := <-ch
+	c.Check(res.Payload, check.Equals, "hi")
 
-	ps.Pub("hello", "t2")
-	c.Check(<-ch, check.Equals, "hello")
+	msg2 := &Message{
+		Id:      1,
+		Payload: "hello",
+	}
+	ps.Pub(msg2, "t2")
+	res = <-ch
+	c.Check(res.Payload, check.Equals, "hello")
 
 	ps.Shutdown()
 	_, ok := <-ch
@@ -171,10 +245,19 @@ func (s *Suite) TestMultiSubOnce(c *check.C) {
 	ps := New(1)
 	ch := ps.SubOnce("t1", "t2")
 
-	ps.Pub("hi", "t1")
-	c.Check(<-ch, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
+	res := <-ch
+	c.Check(res.Payload, check.Equals, "hi")
 
-	ps.Pub("hello", "t2")
+	msg2 := &Message{
+		Id:      2,
+		Payload: "hello",
+	}
+	ps.Pub(msg2, "t2")
 
 	_, ok := <-ch
 	c.Check(ok, check.Equals, false)
@@ -186,9 +269,15 @@ func (s *Suite) TestMultiPub(c *check.C) {
 	ch1 := ps.Sub("t1")
 	ch2 := ps.Sub("t2")
 
-	ps.Pub("hi", "t1", "t2")
-	c.Check(<-ch1, check.Equals, "hi")
-	c.Check(<-ch2, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1", "t2")
+	res1 := <-ch1
+	res2 := <-ch2
+	c.Check(res1.Payload, check.Equals, "hi")
+	c.Check(res2.Payload, check.Equals, "hi")
 
 	ps.Shutdown()
 }
@@ -199,10 +288,19 @@ func (s *Suite) TestMultiUnsub(c *check.C) {
 
 	ps.Unsub(ch, "t1")
 
-	ps.Pub("hi", "t1")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
 
-	ps.Pub("hello", "t2")
-	c.Check(<-ch, check.Equals, "hello")
+	msg2 := &Message{
+		Id:      2,
+		Payload: "hello",
+	}
+	ps.Pub(msg2, "t2")
+	res := <-ch
+	c.Check(res.Payload, check.Equals, "hello")
 
 	ps.Unsub(ch, "t2", "t3")
 	_, ok := <-ch
@@ -215,12 +313,24 @@ func (s *Suite) TestMultiClose(c *check.C) {
 	ps := New(1)
 	ch := ps.Sub("t1", "t2")
 
-	ps.Pub("hi", "t1")
-	c.Check(<-ch, check.Equals, "hi")
+	msg1 := &Message{
+		Id:      1,
+		Payload: "hi",
+	}
+	ps.Pub(msg1, "t1")
+	res := <-ch
+	c.Check(res.Payload, check.Equals, "hi")
 
 	ps.Close("t1")
-	ps.Pub("hello", "t2")
-	c.Check(<-ch, check.Equals, "hello")
+
+	msg2 := &Message{
+		Id:      2,
+		Payload: "hello",
+	}
+
+	ps.Pub(msg2, "t2")
+	res = <-ch
+	c.Check(res.Payload, check.Equals, "hello")
 
 	ps.Close("t2")
 	_, ok := <-ch

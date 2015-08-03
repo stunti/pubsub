@@ -31,7 +31,7 @@ type PubSub struct {
 type Message struct {
 	Id      uint64
 	Payload interface{}
-	Reply   chan interface{}
+	//	Reply   chan interface{}
 }
 
 type cmd struct {
