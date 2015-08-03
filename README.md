@@ -6,7 +6,10 @@ original version:
 
     go get github.com/tuxychandru/pubsub
 
-View the [API Documentation](http://godoc.org/github.com/tuxychandru/pubsub).
+View the [API Documentation](http://godoc.org/github.com/stunti/pubsub).
+
+View the [Original API Documentation](http://godoc.org/github.com/tuxychandru/pubsub).
+
 
 ## License
 
